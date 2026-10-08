@@ -172,10 +172,12 @@ int main(int argc, char** argv)
 
   std::vector< tarasenko::Ellipse > ellipses = {};
   tarasenko::Ellipse cur = {};
-  while (std::cin >> cur.rx >> cur.ry >> cur.center.x >> cur.center.y) {
-    if (cur.ry == 0) {
-      cur.ry = cur.rx;
-    }
+  long rx = 0, ry = 0, x = 0, y = 0;
+  while (std::cin >> rx >> ry >> x >> y) {
+    cur.rx = rx;
+    cur.ry = ry == 0 ? rx : ry;
+    cur.center.x = x;
+    cur.center.y = y;
     ellipses.push_back(cur);
   }
   if (!std::cin.eof()) {
