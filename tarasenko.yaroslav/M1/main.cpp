@@ -8,6 +8,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 struct Point {
   long x;
@@ -140,7 +141,6 @@ constexpr int base = 10;
 constexpr int threads_arg = 1;
 constexpr int tries_arg = 2;
 constexpr int seed_arg = 3;
-constexpr int max_threads = 1024;
 
 int main(int argc, char** argv)
 {
@@ -153,11 +153,10 @@ int main(int argc, char** argv)
     std::cerr << "Negative threads number\n";
     return 1;
   }
+  const long hardware_threads = std::thread::hardware_concurrency();
+  threads = std::min(threads, hardware_threads);
   if (threads == 0) {
     threads = 1;
-  }
-  if (threads > max_threads) {
-    threads = max_threads;
   }
   const long tries = std::strtol(argv[tries_arg], nullptr, base);
   if (tries <= 0) {
@@ -168,7 +167,7 @@ int main(int argc, char** argv)
   if (argc == max_args) {
     seed = std::strtoll(argv[seed_arg], nullptr, base);
     if (seed < 0) {
-      std::cerr << "Negative seed initializing value";
+      std::cerr << "Negative seed initializing value\n";
       return 1;
     }
   }
