@@ -1,8 +1,13 @@
+#include <cstddef>
+#include <cstdlib>
 #include <future>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
 
 struct Point
 {
@@ -41,30 +46,30 @@ std::pair< long, long > calc(const std::vector< Circle >& circles, Rectangle fra
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> distribution_x(frame.left_bottom.x, frame.right_top.x);
   std::uniform_real_distribution<> distribution_y(frame.left_bottom.y, frame.right_top.y);
-  long unionHits = 0;
-  long intersectionHits = 0;
+  long union_hits = 0;
+  long intersection_hits = 0;
   for (long long i = 0; i < tries; ++i) {
-    bool isInsideAll = true;
-    bool isFirstHit = true;
-    RealPoint point = {distribution_x(gen), distribution_y(gen)};
-    for (size_t j = 0; j < circles.size(); ++j) {
+    bool is_inside_all = true;
+    bool is_first_hit = true;
+    const RealPoint point = {distribution_x(gen), distribution_y(gen)};
+    for (std::size_t j = 0; j < circles.size(); ++j) {
       if (isInside(point, circles[j])) {
-        if (isFirstHit) {
-          unionHits++;
-          isFirstHit = false;
+        if (is_first_hit) {
+          union_hits++;
+          is_first_hit = false;
         }
-        if (!isInsideAll) {
+        if (!is_inside_all) {
           break;
         }
       } else {
-        isInsideAll = false;
+        is_inside_all = false;
       }
     }
-    if (isInsideAll) {
-      intersectionHits++;
+    if (is_inside_all) {
+      intersection_hits++;
     }
   }
-  return {unionHits, intersectionHits};
+  return {union_hits, intersection_hits};
 }
 
 void promiseValueSetter(const std::vector< Circle >& circles, Rectangle frame, long tries,
@@ -80,7 +85,7 @@ Rectangle findFrame(const std::vector< Circle >& circles)
   long left_bound = first.center.x - first.radius;
   long top_bound = first.center.y + first.radius;
   long bottom_bound = first.center.y - first.radius;
-  for (size_t i = 0; i < circles.size(); ++i) {
+  for (std::size_t i = 0; i < circles.size(); ++i) {
     const Circle& cur = circles[i];
     if (right_bound < cur.center.x + cur.radius) {
       right_bound = cur.center.x + cur.radius;
@@ -124,26 +129,33 @@ std::pair< double, double > getArea(const std::vector< Circle >& circles, long t
 
   long long total_union = 0;
   long long total_intersection = 0;
-  for (size_t i = 0; i < futures.size(); ++i) {
+  for (std::size_t i = 0; i < futures.size(); ++i) {
     auto res = futures[i].get();
     total_union += res.first;
     total_intersection += res.second;
   }
-  for (size_t i = 0; i < descriptors.size(); ++i) {
+  for (std::size_t i = 0; i < descriptors.size(); ++i) {
     descriptors[i].join();
   }
 
-  double area = getRectangleArea(frame);
+  const double area = getRectangleArea(frame);
   return {area * total_union / tries, area * total_intersection / tries};
 }
 
+constexpr int min_args = 3;
+constexpr int max_args = 4;
+constexpr int base = 10;
+constexpr int threads_arg = 1;
+constexpr int tries_arg = 2;
+constexpr int seed_arg = 3;
+
 int main(int argc, char** argv)
 {
-  if (argc < 3 || argc > 4) {
+  if (argc < min_args || argc > max_args) {
     std::cerr << "Incorrect number of arguments\n";
     return 1;
   }
-  long threads = strtol(argv[1], nullptr, 10);
+  long threads = std::strtol(argv[threads_arg], nullptr, base);
   if (threads < 0) {
     std::cerr << "Negative threads number\n";
     return 1;
@@ -151,14 +163,14 @@ int main(int argc, char** argv)
   if (threads == 0) {
     threads = 1;
   }
-  long tries = strtol(argv[2], nullptr, 10);
+  const long tries = std::strtol(argv[tries_arg], nullptr, base);
   if (tries <= 0) {
     std::cerr << "Non-positive tries number\n";
     return 1;
   }
   long long seed = 0;
-  if (argc == 4) {
-    seed = strtoll(argv[3], nullptr, 10);
+  if (argc == max_args) {
+    seed = std::strtoll(argv[seed_arg], nullptr, base);
     if (seed < 0) {
       std::cerr << "Negative seed initializing value";
       return 1;
