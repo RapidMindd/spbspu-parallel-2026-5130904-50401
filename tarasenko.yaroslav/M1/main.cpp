@@ -46,7 +46,7 @@ std::pair< long, long > calc(const std::vector< Circle >& circles, Rectangle fra
   for (long long i = 0; i < tries; ++i) {
     bool isInsideAll = true;
     bool isFirstHit = true;
-    RealPoint point = {distribution_x(gen), distribution_y(gen)}  ;
+    RealPoint point = {distribution_x(gen), distribution_y(gen)};
     for (size_t j = 0; j < circles.size(); ++j) {
       if (isInside(point, circles[j])) {
         if (isFirstHit) {
@@ -56,8 +56,7 @@ std::pair< long, long > calc(const std::vector< Circle >& circles, Rectangle fra
         if (!isInsideAll) {
           break;
         }
-      }
-      else {
+      } else {
         isInsideAll = false;
       }
     }
@@ -101,15 +100,16 @@ Rectangle findFrame(const std::vector< Circle >& circles)
 
 long long getRectangleArea(Rectangle rectangle)
 {
-  return (rectangle.right_top.x - rectangle.left_bottom.x) * (rectangle.right_top.y - rectangle.left_bottom.y);
+  return (rectangle.right_top.x - rectangle.left_bottom.x)
+       * (rectangle.right_top.y - rectangle.left_bottom.y);
 }
 
 std::pair< double, double > getArea(const std::vector< Circle >& circles, long threads, long tries,
                                     long long seed)
 {
-  long tries_per_thread = threads / tries;
+  long tries_per_thread = tries / threads;
   Rectangle frame = findFrame(circles);
-  std::vector< std::thread > descriptors(threads);
+  std::vector< std::thread > descriptors;
   std::vector< std::future< std::pair< long, long > > > futures;
   for (long long i = 0; i < threads - 1; ++i) {
     std::promise< std::pair< long, long > > p;
@@ -119,9 +119,8 @@ std::pair< double, double > getArea(const std::vector< Circle >& circles, long t
   }
   std::promise< std::pair< long, long > > p;
   futures.push_back(p.get_future());
-  descriptors.emplace_back(promiseValueSetter, circles, frame,
-                           tries_per_thread + (tries % tries_per_thread), seed + threads,
-                           std::move(p));
+  descriptors.emplace_back(promiseValueSetter, circles, frame, tries_per_thread + (tries % threads),
+                           seed + threads, std::move(p));
 
   long long total_union = 0;
   long long total_intersection = 0;
@@ -134,7 +133,8 @@ std::pair< double, double > getArea(const std::vector< Circle >& circles, long t
     descriptors[i].join();
   }
 
-  return {total_union / tries * getRectangleArea(frame), total_intersection / tries * getRectangleArea(frame)};
+  double area = getRectangleArea(frame);
+  return {area * total_union / tries, area * total_intersection / tries};
 }
 
 int main(int argc, char** argv)
@@ -147,6 +147,9 @@ int main(int argc, char** argv)
   if (threads < 0) {
     std::cerr << "Negative threads number\n";
     return 1;
+  }
+  if (threads == 0) {
+    threads = 1;
   }
   long tries = strtol(argv[2], nullptr, 10);
   if (tries <= 0) {
@@ -172,8 +175,12 @@ int main(int argc, char** argv)
     std::cerr << "Incorrect input\n";
     return 1;
   }
+  if (circles.empty()) {
+    std::cout << 0 << ' ' << 0 << '\n';
+    return 0;
+  }
 
   auto res = getArea(circles, threads, tries, seed);
-  std::cout << std::setprecision(std::numeric_limits<double>::max_digits10);
+  std::cout << std::setprecision(std::numeric_limits< double >::max_digits10);
   std::cout << res.first << ' ' << res.second << '\n';
 }
