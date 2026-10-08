@@ -140,6 +140,7 @@ constexpr int base = 10;
 constexpr int threads_arg = 1;
 constexpr int tries_arg = 2;
 constexpr int seed_arg = 3;
+constexpr int max_threads = 1024;
 
 int main(int argc, char** argv)
 {
@@ -154,6 +155,9 @@ int main(int argc, char** argv)
   }
   if (threads == 0) {
     threads = 1;
+  }
+  if (threads > max_threads) {
+    threads = max_threads;
   }
   const long tries = std::strtol(argv[tries_arg], nullptr, base);
   if (tries <= 0) {
