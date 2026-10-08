@@ -9,26 +9,22 @@
 #include <utility>
 #include <vector>
 
-struct Point
-{
+struct Point {
   long x;
   long y;
 };
 
-struct RealPoint
-{
+struct RealPoint {
   double x;
   double y;
 };
 
-struct Circle
-{
+struct Circle {
   long radius;
   Point center;
 };
 
-struct Rectangle
-{
+struct Rectangle {
   Point left_bottom;
   Point right_top;
 };
@@ -40,8 +36,7 @@ bool isInside(RealPoint point, Circle circle)
   return point.x * point.x + point.y * point.y <= circle.radius * circle.radius;
 }
 
-std::pair< long, long > calc(const std::vector< Circle >& circles, Rectangle frame, long tries,
-                             long long seed)
+std::pair< long, long > calc(const std::vector< Circle >& circles, Rectangle frame, long tries, long long seed)
 {
   std::mt19937 gen(seed);
   std::uniform_real_distribution<> distribution_x(frame.left_bottom.x, frame.right_top.x);
@@ -72,8 +67,8 @@ std::pair< long, long > calc(const std::vector< Circle >& circles, Rectangle fra
   return {union_hits, intersection_hits};
 }
 
-void promiseValueSetter(const std::vector< Circle >& circles, Rectangle frame, long tries,
-                        long long seed, std::promise< std::pair< long, long > > p)
+void promiseValueSetter(const std::vector< Circle >& circles, Rectangle frame, long tries, long long seed,
+    std::promise< std::pair< long, long > > p)
 {
   p.set_value(calc(circles, frame, tries, seed));
 }
@@ -105,12 +100,10 @@ Rectangle findFrame(const std::vector< Circle >& circles)
 
 long long getRectangleArea(Rectangle rectangle)
 {
-  return (rectangle.right_top.x - rectangle.left_bottom.x)
-       * (rectangle.right_top.y - rectangle.left_bottom.y);
+  return (rectangle.right_top.x - rectangle.left_bottom.x) * (rectangle.right_top.y - rectangle.left_bottom.y);
 }
 
-std::pair< double, double > getArea(const std::vector< Circle >& circles, long threads, long tries,
-                                    long long seed)
+std::pair< double, double > getArea(const std::vector< Circle >& circles, long threads, long tries, long long seed)
 {
   long tries_per_thread = tries / threads;
   Rectangle frame = findFrame(circles);
@@ -119,13 +112,12 @@ std::pair< double, double > getArea(const std::vector< Circle >& circles, long t
   for (long long i = 0; i < threads - 1; ++i) {
     std::promise< std::pair< long, long > > p;
     futures.push_back(p.get_future());
-    descriptors.emplace_back(promiseValueSetter, circles, frame, tries_per_thread, seed + i,
-                             std::move(p));
+    descriptors.emplace_back(promiseValueSetter, circles, frame, tries_per_thread, seed + i, std::move(p));
   }
   std::promise< std::pair< long, long > > p;
   futures.push_back(p.get_future());
-  descriptors.emplace_back(promiseValueSetter, circles, frame, tries_per_thread + (tries % threads),
-                           seed + threads, std::move(p));
+  descriptors.emplace_back(
+      promiseValueSetter, circles, frame, tries_per_thread + (tries % threads), seed + threads, std::move(p));
 
   long long total_union = 0;
   long long total_intersection = 0;
